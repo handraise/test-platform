@@ -6,6 +6,7 @@ import { z } from "zod";
 import { BrowserSession } from "./browser";
 import { TestFile, resolveStartUrl } from "./discovery";
 import { TraceEntry, checkExpect } from "./trace";
+import { resolveVars } from "./env";
 
 const MODEL = "claude-opus-4-8";
 
@@ -282,7 +283,11 @@ export async function runAiExecutor(opts: {
     }),
   ];
 
-  const stepsList = test.steps.map((s, i) => `${i + 1}. ${s}`).join("\n");
+  // Resolve ${VAR} placeholders (e.g. credentials) from the environment before
+  // the agent sees them. The stored step text keeps the placeholder for display.
+  const stepsList = test.steps
+    .map((s, i) => `${i + 1}. ${resolveVars(s)}`)
+    .join("\n");
   let userMessage = `Test: ${test.name}
 Start URL (already opened): ${startUrl}
 

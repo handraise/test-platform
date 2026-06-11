@@ -1,6 +1,19 @@
 import { defineConfig, devices } from "@playwright/test";
 import os from "node:os";
 import path from "node:path";
+import fs from "node:fs";
+
+// Load .env.local so specs can read credentials from process.env, both when
+// run standalone (`playwright test`) and when spawned by the iBud runner.
+const envFile = path.join(process.cwd(), ".env.local");
+if (fs.existsSync(envFile)) {
+  for (const line of fs.readFileSync(envFile, "utf8").split("\n")) {
+    const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)$/);
+    if (m && process.env[m[1]] === undefined && m[2] !== "") {
+      process.env[m[1]] = m[2];
+    }
+  }
+}
 
 /**
  * Drive the Chrome for Testing binary that agent-browser already installed,
