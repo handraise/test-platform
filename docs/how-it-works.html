@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>iBud — How it works</title>
+    <style>
+      :root {
+        --bg: #000;
+        --panel: #0a0a0a;
+        --panel2: #141414;
+        --line: #1f1f1f;
+        --line2: #333;
+        --ink: #ededed;
+        --dim: #8f8f8f;
+        --faint: #525252;
+        --green: #4cc38a;
+        --amber: #f5a623;
+        --blue: #52a8ff;
+        --red: #e5484d;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+      }
+      code,
+      .mono {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      }
+
+      .deck {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .slide {
+        display: none;
+        width: min(960px, 92vw);
+        animation: rise 0.35s ease both;
+      }
+      .slide.active {
+        display: block;
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .kicker {
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        color: var(--dim);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 99px;
+        background: var(--green);
+        display: inline-block;
+      }
+      h1 {
+        font-size: clamp(34px, 6vw, 60px);
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        line-height: 1.02;
+      }
+      h2 {
+        font-size: clamp(26px, 4vw, 38px);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        margin-bottom: 26px;
+      }
+      .lead {
+        color: var(--dim);
+        font-size: clamp(16px, 2vw, 20px);
+        line-height: 1.55;
+        margin-top: 18px;
+        max-width: 640px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+      }
+      .cols-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .card {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 12px;
+        padding: 20px 22px;
+      }
+      .card h3 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card p {
+        color: var(--dim);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 9px;
+        border-radius: 99px;
+      }
+      .b-ai {
+        color: var(--blue);
+        background: rgba(82, 168, 255, 0.12);
+      }
+      .b-replay {
+        color: var(--dim);
+        background: var(--panel2);
+      }
+      .b-heal {
+        color: var(--amber);
+        background: rgba(245, 166, 35, 0.12);
+      }
+      .b-pass {
+        color: var(--green);
+        background: rgba(76, 195, 138, 0.12);
+      }
+
+      .flow {
+        display: flex;
+        align-items: stretch;
+        gap: 12px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+      .flow .step {
+        flex: 1 1 0;
+        min-width: 150px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--panel);
+        padding: 18px;
+      }
+      .flow .step .n {
+        font-size: 12px;
+        color: var(--faint);
+        margin-bottom: 10px;
+      }
+      .flow .step h3 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .flow .step p {
+        font-size: 13px;
+        color: var(--dim);
+        line-height: 1.45;
+      }
+      .arrow {
+        align-self: center;
+        color: var(--faint);
+        font-size: 20px;
+      }
+
+      pre {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 12px;
+        padding: 20px 22px;
+        font-size: 14px;
+        line-height: 1.6;
+        overflow: auto;
+        color: var(--ink);
+      }
+      pre .c {
+        color: var(--faint);
+      }
+      pre .k {
+        color: var(--blue);
+      }
+      pre .s {
+        color: var(--green);
+      }
+      .label {
+        font-size: 12px;
+        color: var(--faint);
+        margin-bottom: 8px;
+      }
+
+      .progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        background: var(--ink);
+        transition: width 0.3s ease;
+      }
+      .hud {
+        position: fixed;
+        bottom: 22px;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 28px;
+        color: var(--faint);
+        font-size: 12px;
+      }
+      .hud .nav {
+        display: flex;
+        gap: 10px;
+      }
+      .hud button {
+        background: none;
+        border: 1px solid var(--line2);
+        color: var(--dim);
+        border-radius: 7px;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        font-size: 14px;
+        transition:
+          color 0.15s,
+          border-color 0.15s;
+      }
+      .hud button:hover {
+        color: var(--ink);
+        border-color: var(--faint);
+      }
+      .wm {
+        font-weight: 600;
+        color: var(--dim);
+      }
+      ul.tight {
+        margin-top: 16px;
+        list-style: none;
+      }
+      ul.tight li {
+        color: var(--dim);
+        font-size: 15px;
+        line-height: 1.5;
+        padding: 7px 0 7px 22px;
+        position: relative;
+      }
+      ul.tight li::before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        color: var(--green);
+      }
+      ul.tight li b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="progress" id="progress"></div>
+    <div class="deck" id="deck">
+      <!-- 1 -->
+      <section class="slide active">
+        <div class="kicker"><span class="dot"></span> AI E2E TESTING</div>
+        <h1>iBud<br /><span style="color: var(--dim)">tests in English, run by AI.</span></h1>
+        <p class="lead">
+          You write what a test should do in plain English. An AI agent drives a
+          real browser to do it, then caches the exact steps so future runs are
+          instant — and re-engages only when something breaks.
+        </p>
+      </section>
+
+      <!-- 2 -->
+      <section class="slide">
+        <div class="kicker"><span class="dot"></span> THE IDEA</div>
+        <h2>Three problems, one loop</h2>
+        <div class="grid cols-3">
+          <div class="card">
+            <h3>✍️ Authoring is slow</h3>
+            <p>
+              Hand-written selectors and waits rot fast. iBud tests are numbered
+              English steps in a markdown file.
+            </p>
+          </div>
+          <div class="card">
+            <h3>🐢 AI runs are costly</h3>
+            <p>
+              Letting an LLM drive every run burns tokens and time. iBud does it
+              once, then replays deterministically.
+            </p>
+          </div>
+          <div class="card">
+            <h3>💔 Tests break on drift</h3>
+            <p>
+              UIs change and scripts go stale. iBud heals the broken test with
+              AI and re-records it automatically.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 -->
+      <section class="slide">
+        <div class="kicker"><span class="dot"></span> THE TEST FILE</div>
+        <h2>A test is plain English</h2>
+        <div class="grid cols-2" style="align-items: start">
+          <div>
+            <div class="label">tests/login.test.md</div>
+            <pre><span class="c">---</span>
+name: <span class="s">User can log in</span>
+url: <span class="s">/auth/login</span>
+tags: <span class="s">[auth, smoke]</span>
+<span class="c">---</span>
+
+1. Fill the Email field with <span class="s">"dev@…"</span>
+2. Fill the Password field with <span class="s">"…"</span>
+3. Click the <span class="s">"Sign In"</span> button
+4. Expect the URL to contain <span class="s">"discovery"</span>
+5. Expect <span class="s">"Narrative Clusters"</span> visible</pre>
+          </div>
+          <div>
+            <ul class="tight">
+              <li><b>YAML frontmatter</b> sets the name, start URL, and tags.</li>
+              <li>
+                <b>Numbered steps</b> are instructions — actions and
+                expectations, no selectors.
+              </li>
+              <li>
+                A <b>content hash</b> of the file ties it to its cached script;
+                edit the file and the cache auto-invalidates.
+              </li>
+              <li>
+                Drop a new <code>*.test.md</code> in <code>tests/</code> and
+                it's discovered automatically.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 -->
+      <section class="slide">
+        <div class="kicker"><span class="dot"></span> EXECUTION MODEL</div>
+        <h2>Replay first · heal on drift</h2>
+        <div class="flow">
+          <div class="step">
+            <div class="n">RUN 1</div>
+            <h3><span class="badge b-ai">AI</span></h3>
+            <p>
+              Claude reads the steps, looks at the page via the accessibility
+              tree, and drives the browser. Every successful command is
+              recorded.
+            </p>
+          </div>
+          <div class="arrow">→</div>
+          <div class="step">
+            <div class="n">RUN 2…N</div>
+            <h3><span class="badge b-replay">Replay</span></h3>
+            <p>
+              The recorded commands replay directly — no AI, no tokens. Seconds,
+              not minutes.
+            </p>
+          </div>
+          <div class="arrow">→</div>
+          <div class="step">
+            <div class="n">ON FAILURE</div>
+            <h3><span class="badge b-heal">Healed</span></h3>
+            <p>
+              If replay breaks (selector changed, flow moved), the AI re-runs
+              the test, fixes it, and overwrites the cached script.
+            </p>
+          </div>
+        </div>
+        <p class="lead" style="margin-top: 22px">
+          The slow, expensive AI pass happens rarely — only on the first run or
+          when the app genuinely drifts.
+        </p>
+      </section>
+
+      <!-- 5 -->
+      <section class="slide">
+        <div class="kicker"><span class="dot"></span> UNDER THE HOOD</div>
+        <h2>What the AI actually controls</h2>
+        <div class="grid cols-2">
+          <div class="card">
+            <h3>🛠️ A small tool surface</h3>
+            <p>
+              The agent gets a handful of tools —
+              <code>snapshot</code>, <code>act</code>, <code>find_act</code>,
+              <code>wait</code>, <code>assert</code> — each a thin call into the
+              <b>agent-browser</b> CLI driving Chrome.
+            </p>
+          </div>
+          <div class="card">
+            <h3>👁️ Accessibility tree, not pixels</h3>
+            <p>
+              <code>snapshot</code> returns roles, names, and refs — so the
+              agent reasons about "the Sign In button", and records stable
+              selectors for replay.
+            </p>
+          </div>
+          <div class="card">
+            <h3>🗂️ Recorded as JSON, not code</h3>
+            <p>
+              Each cached script is a list of agent-browser command arrays in
+              <code>data/scripts/&lt;id&gt;.json</code> — exactly reproducible,
+              trivial to re-record.
+            </p>
+          </div>
+          <div class="card">
+            <h3>🔒 Isolated per run</h3>
+            <p>
+              Every run gets its own browser session, so runs never collide and
+              can go in parallel.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6 -->
+      <section class="slide">
+        <div class="kicker"><span class="dot"></span> LIVE VISIBILITY</div>
+        <h2>Watch it happen</h2>
+        <div class="grid cols-2" style="align-items: start">
+          <ul class="tight">
+            <li>
+              The runner streams events over <b>SSE</b> — step started, passed,
+              failed, screenshot, finished.
+            </li>
+            <li>
+              The dashboard renders a <b>live step timeline</b> with a
+              screenshot captured at each step.
+            </li>
+            <li>
+              A <b>"watch live"</b> toggle embeds agent-browser's own viewport
+              so you see the real browser in real time.
+            </li>
+            <li>
+              Every run is stored in <b>SQLite</b> with its mode, status,
+              duration, and token cost.
+            </li>
+          </ul>
+          <div>
+            <div class="label">run timeline</div>
+            <pre><span class="s">●</span> 1  Fill the Email field        <span class="c">passed</span>
+<span class="s">●</span> 2  Fill the Password field     <span class="c">passed</span>
+<span class="s">●</span> 3  Click "Sign In"             <span class="c">passed</span>
+<span class="s">●</span> 4  URL contains "discovery"    <span class="c">passed</span>
+<span class="s">●</span> 5  "Narrative Clusters" shown  <span class="c">passed</span>
+
+<span class="c">run finished</span>  <span class="badge b-pass">passed</span> <span class="badge b-replay">replay</span> <span class="c">· 5.9s</span></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7 -->
+      <section class="slide">
+        <div class="kicker"><span class="dot"></span> STACK</div>
+        <h2>How it's built</h2>
+        <div class="grid cols-3">
+          <div class="card">
+            <h3>Next.js</h3>
+            <p>App Router dashboard + API routes + the runner, one TypeScript app.</p>
+          </div>
+          <div class="card">
+            <h3>Claude Opus</h3>
+            <p>The agent that interprets steps and drives the browser via tool calls.</p>
+          </div>
+          <div class="card">
+            <h3>agent-browser</h3>
+            <p>Vercel's Rust CLI driving Chrome; also supplies the live viewport.</p>
+          </div>
+          <div class="card">
+            <h3>SQLite + Drizzle</h3>
+            <p>Tests, runs, and per-step results — local, zero-setup.</p>
+          </div>
+          <div class="card">
+            <h3>SSE</h3>
+            <p>Streams run progress to the dashboard as it happens.</p>
+          </div>
+          <div class="card">
+            <h3>Markdown tests</h3>
+            <p>The human-owned source of truth in <code>tests/</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8 -->
+      <section class="slide">
+        <div class="kicker"><span class="dot"></span> IN ONE LINE</div>
+        <h1 style="font-size: clamp(28px, 5vw, 48px)">
+          Write the test in English.<br />
+          <span style="color: var(--green)">AI runs it once.</span>
+          <span style="color: var(--dim)">It replays forever — and heals itself.</span>
+        </h1>
+        <p class="lead">
+          Currently testing
+          <code>naapp-stage2.handraise.site</code> — login, chat feed listing,
+          and chat deletion, all green.
+        </p>
+      </section>
+    </div>
+
+    <div class="hud">
+      <span class="wm">iBud</span>
+      <div class="nav">
+        <button id="prev" aria-label="Previous">←</button>
+        <span id="counter" style="align-self: center; min-width: 48px; text-align: center"></span>
+        <button id="next" aria-label="Next">→</button>
+      </div>
+      <span>← / → · space</span>
+    </div>
+
+    <script>
+      const slides = [...document.querySelectorAll(".slide")];
+      let i = 0;
+      const progress = document.getElementById("progress");
+      const counter = document.getElementById("counter");
+      function show(n) {
+        i = Math.max(0, Math.min(slides.length - 1, n));
+        slides.forEach((s, k) => s.classList.toggle("active", k === i));
+        progress.style.width = ((i + 1) / slides.length) * 100 + "%";
+        counter.textContent = i + 1 + " / " + slides.length;
+      }
+      document.getElementById("next").onclick = () => show(i + 1);
+      document.getElementById("prev").onclick = () => show(i - 1);
+      addEventListener("keydown", (e) => {
+        if (["ArrowRight", " ", "PageDown"].includes(e.key)) {
+          e.preventDefault();
+          show(i + 1);
+        } else if (["ArrowLeft", "PageUp"].includes(e.key)) {
+          e.preventDefault();
+          show(i - 1);
+        } else if (e.key === "Home") show(0);
+        else if (e.key === "End") show(slides.length - 1);
+      });
+      show(0);
+    </script>
+  </body>
+</html>
