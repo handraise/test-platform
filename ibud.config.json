@@ -1,0 +1,7 @@
+{
+  "baseUrl": "https://naapp-stage2.handraise.site",
+  "testDir": "tests",
+  "dataDir": "data",
+  "headless": true,
+  "agentBrowserDashboardUrl": "http://localhost:4848"
+}
