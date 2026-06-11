@@ -1,65 +1,128 @@
-import Image from "next/image";
+import Link from "next/link";
+import { desc, eq } from "drizzle-orm";
+import { db, schema } from "@/db";
+import { discoverTests } from "@/lib/discovery";
+import { loadScript } from "@/lib/trace";
+import {
+  KindBadge,
+  ModeBadge,
+  StatusBadge,
+  formatTime,
+} from "@/components/badges";
+import { RunButton } from "@/components/RunButton";
+
+export const dynamic = "force-dynamic";
 
 export default function Home() {
+  const tests = discoverTests().map((test) => {
+    const lastRun = db
+      .select()
+      .from(schema.runs)
+      .where(eq(schema.runs.testId, test.id))
+      .orderBy(desc(schema.runs.startedAt))
+      .limit(1)
+      .all()[0];
+    return { test, lastRun, cached: loadScript(test.id, test.contentHash) !== null };
+  });
+
+  const passed = tests.filter((t) => t.lastRun?.status === "passed").length;
+  const failed = tests.filter(
+    (t) => t.lastRun && t.lastRun.status !== "passed" && t.lastRun.status !== "running",
+  ).length;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="space-y-8">
+      <section className="rise flex items-end justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Tests</h1>
+          <p className="text-dim text-[13px] mt-1">
+            Plain-English specs, executed by AI, replayed deterministically.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex gap-6 text-[13px] text-dim">
+          <span>
+            <span className="text-ink font-medium">{tests.length}</span> tests
+          </span>
+          <span>
+            <span className="text-green font-medium">{passed}</span> passing
+          </span>
+          <span>
+            <span className={`font-medium ${failed ? "text-red" : "text-ink"}`}>
+              {failed}
+            </span>{" "}
+            failing
+          </span>
         </div>
-      </main>
+      </section>
+
+      <section
+        className="rounded-xl border border-line bg-panel overflow-hidden rise"
+        style={{ animationDelay: "60ms" }}
+      >
+        {tests.length === 0 && (
+          <p className="px-5 py-12 text-dim text-[13px] text-center">
+            No tests found. Add{" "}
+            <code className="font-[family-name:var(--font-mono)] text-ink">
+              *.test.md
+            </code>{" "}
+            files to{" "}
+            <code className="font-[family-name:var(--font-mono)] text-ink">tests/</code>.
+          </p>
+        )}
+        {tests.map(({ test, lastRun, cached }, i) => (
+          <div
+            key={test.id}
+            className="flex items-center gap-6 px-5 py-4 border-b border-line last:border-b-0 hover:bg-panel-2/60 transition-colors rise"
+            style={{ animationDelay: `${90 + i * 30}ms` }}
+          >
+            <div className="min-w-0 flex-1">
+              <Link
+                href={`/tests/${test.id}`}
+                className="text-[14px] font-medium hover:underline underline-offset-4 inline-flex items-center gap-2"
+              >
+                {test.name}
+                <KindBadge kind={test.kind} />
+              </Link>
+              <p className="text-[12px] text-dim truncate mt-0.5 font-[family-name:var(--font-mono)]">
+                {test.path} ·{" "}
+                {test.kind === "playwright"
+                  ? `${test.steps.length} test${test.steps.length === 1 ? "" : "s"}`
+                  : `${test.steps.length} steps`}
+              </p>
+            </div>
+            <span
+              className={`text-[12px] hidden sm:inline ${cached ? "text-dim" : "text-faint"}`}
+              title={
+                test.kind === "playwright"
+                  ? "Runs via the Playwright test runner"
+                  : cached
+                    ? "Cached script — next run replays without AI"
+                    : "No cached script — next run uses AI"
+              }
+            >
+              {test.kind === "playwright"
+                ? "spec"
+                : cached
+                  ? "cached"
+                  : "no script"}
+            </span>
+            <div className="w-48 hidden md:block">
+              {lastRun ? (
+                <Link href={`/runs/${lastRun.id}`} className="inline-flex items-center gap-2">
+                  <StatusBadge status={lastRun.status} />
+                  <ModeBadge mode={lastRun.mode} />
+                </Link>
+              ) : (
+                <span className="text-faint text-[12px]">never run</span>
+              )}
+              {lastRun && (
+                <p className="text-[11px] text-faint mt-1">{formatTime(lastRun.startedAt)}</p>
+              )}
+            </div>
+            <RunButton testId={test.id} size="sm" />
+          </div>
+        ))}
+      </section>
     </div>
   );
 }

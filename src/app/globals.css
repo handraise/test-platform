@@ -1,26 +1,106 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-bg: #000000;
+  --color-panel: #0a0a0a;
+  --color-panel-2: #141414;
+  --color-line: #1f1f1f;
+  --color-line-2: #333333;
+  --color-ink: #ededed;
+  --color-dim: #8f8f8f;
+  --color-faint: #525252;
+  --color-green: #4cc38a;
+  --color-amber: #f5a623;
+  --color-red: #e5484d;
+  --color-blue: #52a8ff;
+
+  --font-sans: var(--font-geist-sans), sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-bg);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  font-feature-settings: "cv11";
+}
+
+::selection {
+  background: #ffffff;
+  color: #000000;
+}
+
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes indeterminate {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 110%;
+  }
+}
+
+.led {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.led-running {
+  animation: dot-pulse 1.2s ease-in-out infinite;
+}
+
+.rise {
+  animation: rise 0.3s ease-out both;
+}
+
+.microlabel {
+  font-size: 12px;
+  color: var(--color-dim);
+}
+
+.progress-bar {
+  position: relative;
+  overflow: hidden;
+  height: 2px;
+  background: var(--color-line);
+  border-radius: 9999px;
+}
+.progress-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%;
+  width: 35%;
+  border-radius: 9999px;
+  background: var(--color-ink);
+  animation: indeterminate 1.3s ease-in-out infinite;
 }
