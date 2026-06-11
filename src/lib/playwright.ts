@@ -38,7 +38,18 @@ export async function runPlaywright(opts: {
   // Map test title -> 1-based step index (steps were pre-created from titles).
   const stepIndexByTitle = new Map<string, number>();
   test.steps.forEach((title, i) => stepIndexByTitle.set(title, i + 1));
+  // Single placeholder step ("Run spec") means we couldn't parse titles — fall
+  // back to sequential mapping in that case only.
+  const placeholder =
+    test.steps.length === 1 && test.steps[0] === "Run spec";
   let order = 0;
+
+  // Resolve a Playwright test title to a step index, or null if it isn't one of
+  // this spec's tests (e.g. the auth.setup "authenticate" dependency).
+  const stepFor = (title: string): number | null => {
+    if (placeholder) return 1;
+    return stepIndexByTitle.get(title) ?? null;
+  };
 
   const reporter = path.join(process.cwd(), "scripts", "pw-reporter.cjs");
   const bin = path.join(process.cwd(), "node_modules", ".bin", "playwright");
@@ -56,12 +67,22 @@ export async function runPlaywright(opts: {
 
     const handleEvent = (evt: PwEvent) => {
       if (evt.type === "testBegin" && evt.title) {
-        const idx = stepIndexByTitle.get(evt.title) ?? order + 1;
+        const idx = stepFor(evt.title);
+        if (idx === null) return; // setup/dependency test — not a spec step
         callbacks.onStep(idx, "running");
       } else if (evt.type === "testEnd" && evt.title) {
-        order += 1;
-        const idx = stepIndexByTitle.get(evt.title) ?? order;
+        const idx = stepFor(evt.title);
         const passed = evt.status === "passed";
+        if (idx === null) {
+          // e.g. the auth.setup "authenticate" dependency — surface as a note.
+          callbacks.onNote(`${evt.title}: ${evt.status}`);
+          if (!passed && evt.error) {
+            failures += 1;
+            errors.push(`${evt.title}: ${evt.error}`);
+          }
+          return;
+        }
+        order += 1;
         if (!passed) {
           failures += 1;
           if (evt.error) errors.push(`${evt.title}: ${evt.error}`);
@@ -102,9 +123,9 @@ export async function runPlaywright(opts: {
           } catch {
             // ignore malformed line
           }
-        } else if (line.trim()) {
-          callbacks.onNote(line.trim().slice(0, 300));
         }
+        // Non-event output (Playwright's own reporter chrome) is ignored;
+        // status and errors arrive through our NDJSON reporter and exit code.
       }
     };
 

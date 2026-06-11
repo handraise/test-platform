@@ -63,10 +63,13 @@ export function parseSpecFile(filePath: string): TestFile {
   while ((m = re.exec(raw)) !== null) titles.push(m[2]);
 
   const { rel, id } = relId(filePath);
+  const baseName = path
+    .basename(filePath, ".spec.ts")
+    .replace(/\.(smoke|e2e|api|a11y)$/i, "");
   return {
     id,
     path: rel,
-    name: path.basename(filePath, ".spec.ts"),
+    name: baseName,
     kind: "playwright",
     url: "",
     tags: ["playwright"],
