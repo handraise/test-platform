@@ -9,6 +9,8 @@ export type RunEvent =
       status: "running" | "passed" | "failed";
       note?: string;
       screenshotPath?: string;
+      tracePath?: string;
+      videoPath?: string;
     }
   | { type: "agent_note"; runId: string; text: string }
   | {

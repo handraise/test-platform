@@ -19,16 +19,19 @@ class IbudReporter {
   }
 
   onTestEnd(test, result) {
-    const shot = result.attachments.find(
-      (a) => a.name === "screenshot" && a.path,
-    );
+    const find = (name) => {
+      const a = result.attachments.find((x) => x.name === name && x.path);
+      return a ? a.path : undefined;
+    };
     this.emit({
       type: "testEnd",
       title: test.title,
       status: result.status, // passed | failed | timedOut | skipped | interrupted
       durationMs: result.duration,
       error: result.error ? stripAnsi(result.error.message || "") : undefined,
-      screenshot: shot ? shot.path : undefined,
+      screenshot: find("screenshot"),
+      trace: find("trace"),
+      video: find("video"),
     });
   }
 

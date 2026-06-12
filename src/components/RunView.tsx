@@ -16,7 +16,12 @@ interface StepState {
   status: string;
   note?: string | null;
   screenshotPath?: string | null;
+  tracePath?: string | null;
+  videoPath?: string | null;
 }
+
+const artifactUrl = (p: string) =>
+  `/api/artifacts/${p.replace(/^data\/artifacts\//, "")}`;
 
 interface RunData {
   run: {
@@ -41,6 +46,8 @@ type SseEvent =
       status: string;
       note?: string;
       screenshotPath?: string;
+      tracePath?: string;
+      videoPath?: string;
     }
   | { type: "agent_note"; text: string }
   | { type: "run_finished"; status: string; mode: string; error?: string };
@@ -85,6 +92,8 @@ export function RunView({ runId }: { runId: string }) {
                           status: event.status,
                           note: event.note ?? s.note,
                           screenshotPath: event.screenshotPath ?? s.screenshotPath,
+                          tracePath: event.tracePath ?? s.tracePath,
+                          videoPath: event.videoPath ?? s.videoPath,
                         }
                       : s,
                   ),
@@ -123,6 +132,8 @@ export function RunView({ runId }: { runId: string }) {
   const running = run.status === "running";
   const shots = steps.filter((s) => s.screenshotPath);
   const shown = selectedShot ?? shots[shots.length - 1]?.screenshotPath ?? null;
+  const artifactSteps = steps.filter((s) => s.tracePath || s.videoPath);
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
     <div className="space-y-8">
@@ -275,6 +286,57 @@ export function RunView({ runId }: { runId: string }) {
                   {s.index}
                 </button>
               ))}
+            </div>
+          )}
+
+          {artifactSteps.length > 0 && (
+            <div
+              className="rounded-xl border border-line bg-panel overflow-hidden rise"
+              style={{ animationDelay: "120ms" }}
+            >
+              <p className="text-[12px] font-medium text-dim px-5 py-2.5 border-b border-line">
+                Playwright artifacts
+              </p>
+              <div className="divide-y divide-line">
+                {artifactSteps.map((s) => (
+                  <div key={s.index} className="p-4 space-y-3">
+                    {artifactSteps.length > 1 && (
+                      <p className="text-[12px] text-dim truncate">
+                        <span className="text-faint mr-2">{s.index}</span>
+                        {s.instruction}
+                      </p>
+                    )}
+                    {s.videoPath && (
+                      <video
+                        src={artifactUrl(s.videoPath)}
+                        controls
+                        className="w-full rounded-md border border-line bg-bg"
+                      />
+                    )}
+                    {s.tracePath && (
+                      <div className="flex items-center gap-3 text-[12px]">
+                        <a
+                          href={`https://trace.playwright.dev/?trace=${encodeURIComponent(
+                            `${origin}${artifactUrl(s.tracePath)}`,
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue hover:underline"
+                        >
+                          Open trace ↗
+                        </a>
+                        <a
+                          href={artifactUrl(s.tracePath)}
+                          download
+                          className="text-dim hover:text-ink transition-colors"
+                        >
+                          Download .zip
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

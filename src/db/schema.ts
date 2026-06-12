@@ -38,6 +38,9 @@ export const runSteps = sqliteTable("run_steps", {
   }).notNull(),
   note: text("note"),
   screenshotPath: text("screenshot_path"),
+  // Playwright-only artifacts, relative to cwd under data/artifacts/<runId>/.
+  tracePath: text("trace_path"),
+  videoPath: text("video_path"),
   durationMs: integer("duration_ms"),
 });
 

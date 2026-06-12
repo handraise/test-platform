@@ -27,12 +27,18 @@ Rules:
 - After all steps pass, call finish with status "passed".
 - Keep notes terse. Do not narrate between tool calls.`;
 
+export interface StepArtifacts {
+  tracePath?: string;
+  videoPath?: string;
+}
+
 export interface ExecutorCallbacks {
   onStep: (
     stepIndex: number,
     status: "running" | "passed" | "failed",
     note?: string,
     screenshotPath?: string,
+    artifacts?: StepArtifacts,
   ) => void;
   onNote: (text: string) => void;
 }

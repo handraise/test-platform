@@ -71,16 +71,27 @@ export function startRun(test: TestFile): string {
 
 function makeCallbacks(runId: string): ExecutorCallbacks {
   return {
-    onStep: (stepIndex, status, note, screenshotPath) => {
+    onStep: (stepIndex, status, note, screenshotPath, artifacts) => {
       db.update(schema.runSteps)
         .set({
           status: status === "running" ? "running" : status,
           note: note ?? null,
           ...(screenshotPath ? { screenshotPath } : {}),
+          ...(artifacts?.tracePath ? { tracePath: artifacts.tracePath } : {}),
+          ...(artifacts?.videoPath ? { videoPath: artifacts.videoPath } : {}),
         })
         .where(eq(schema.runSteps.id, `${runId}-${stepIndex}`))
         .run();
-      emitRunEvent({ type: "step_update", runId, stepIndex, status, note, screenshotPath });
+      emitRunEvent({
+        type: "step_update",
+        runId,
+        stepIndex,
+        status,
+        note,
+        screenshotPath,
+        tracePath: artifacts?.tracePath,
+        videoPath: artifacts?.videoPath,
+      });
     },
     onNote: (text) => emitRunEvent({ type: "agent_note", runId, text }),
   };

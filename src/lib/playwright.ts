@@ -18,6 +18,8 @@ interface PwEvent {
   durationMs?: number;
   error?: string;
   screenshot?: string;
+  trace?: string;
+  video?: string;
   total?: number;
 }
 
@@ -33,7 +35,20 @@ export async function runPlaywright(opts: {
 }): Promise<PlaywrightResult> {
   const { test, runId, callbacks } = opts;
   const screenshotDir = path.join(process.cwd(), "data", "screenshots", runId);
+  const artifactDir = path.join(process.cwd(), "data", "artifacts", runId);
   fs.mkdirSync(screenshotDir, { recursive: true });
+
+  const copyArtifact = (src: string | undefined, destName: string): string | undefined => {
+    if (!src || !fs.existsSync(src)) return undefined;
+    fs.mkdirSync(artifactDir, { recursive: true });
+    const dest = path.join(artifactDir, destName);
+    try {
+      fs.copyFileSync(src, dest);
+      return path.relative(process.cwd(), dest);
+    } catch {
+      return undefined;
+    }
+  };
 
   // Map test title -> 1-based step index (steps were pre-created from titles).
   const stepIndexByTitle = new Map<string, number>();
@@ -99,6 +114,9 @@ export async function runPlaywright(opts: {
           }
         }
 
+        const tracePath = copyArtifact(evt.trace, `step-${idx}-trace.zip`);
+        const videoPath = copyArtifact(evt.video, `step-${idx}.webm`);
+
         callbacks.onStep(
           idx,
           passed ? "passed" : "failed",
@@ -106,6 +124,7 @@ export async function runPlaywright(opts: {
             ? `${evt.status} · ${Math.round((evt.durationMs ?? 0) / 100) / 10}s`
             : (evt.error ?? evt.status),
           screenshotPath,
+          { tracePath, videoPath },
         );
       }
     };

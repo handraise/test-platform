@@ -36,7 +36,10 @@ export default defineConfig({
     baseURL: BASE_URL,
     viewport: { width: 1440, height: 900 },
     screenshot: "on",
-    trace: "on-first-retry",
+    // Always capture so iBud can surface them in the run view (local tool,
+    // not CI — the perf cost is fine here).
+    trace: "on",
+    video: "on",
     launchOptions: { executablePath: chromePath },
   },
   projects: [
