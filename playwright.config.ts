@@ -15,13 +15,21 @@ if (fs.existsSync(envFile)) {
   }
 }
 
-// Drive the Chrome for Testing binary that agent-browser already installed,
-// so there's no separate `playwright install` download.
-const chromePath = path.join(
+// Drive the Chrome for Testing binary that agent-browser already installed on
+// macOS dev machines, so there's no separate `playwright install` download.
+// In containers (Linux) this macOS app path doesn't exist: prefer an explicit
+// PLAYWRIGHT_CHROME_PATH override, otherwise fall back to Playwright's own
+// managed Chromium (installed in the Docker image via `playwright install`).
+const macChromePath = path.join(
   os.homedir(),
   ".agent-browser/browsers/chrome-149.0.7827.55",
   "Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
 );
+const chromePath =
+  process.env.PLAYWRIGHT_CHROME_PATH ||
+  (process.platform === "darwin" && fs.existsSync(macChromePath)
+    ? macChromePath
+    : undefined);
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "https://naapp-stage2.handraise.site";
 const STORAGE_STATE = path.join(process.cwd(), ".auth", "user.json");
@@ -40,7 +48,8 @@ export default defineConfig({
     // not CI — the perf cost is fine here).
     trace: "on",
     video: "on",
-    launchOptions: { executablePath: chromePath },
+    // When chromePath is undefined, Playwright uses its own managed Chromium.
+    launchOptions: chromePath ? { executablePath: chromePath } : {},
   },
   projects: [
     // Programmatic auth: logs in once and writes storageState for the rest.
