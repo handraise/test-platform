@@ -52,7 +52,13 @@ type SseEvent =
   | { type: "agent_note"; text: string }
   | { type: "run_finished"; status: string; mode: string; error?: string };
 
-export function RunView({ runId }: { runId: string }) {
+export function RunView({
+  runId,
+  viewportUrl,
+}: {
+  runId: string;
+  viewportUrl: string;
+}) {
   const [data, setData] = useState<RunData | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
   const [selectedShot, setSelectedShot] = useState<string | null>(null);
@@ -253,7 +259,7 @@ export function RunView({ runId }: { runId: string }) {
             </div>
             {showViewport && running ? (
               <iframe
-                src="http://localhost:4848"
+                src={viewportUrl}
                 className="w-full aspect-[4/3] bg-bg"
                 title="agent-browser live viewport"
               />

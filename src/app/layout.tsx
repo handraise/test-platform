@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { loadConfig } from "@/lib/config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const { agentBrowserDashboardUrl } = loadConfig();
   return (
     <html
       lang="en"
@@ -37,7 +39,7 @@ export default function RootLayout({
             </Link>
             <nav className="flex items-center gap-5">
               <a
-                href="http://localhost:4848"
+                href={agentBrowserDashboardUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="text-[13px] text-dim hover:text-ink transition-colors"
