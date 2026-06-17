@@ -1,5 +1,8 @@
 # iBud test platform — runs Next.js plus real browsers (agent-browser + Playwright).
 #
+# Build for linux/amd64: agent-browser's Chrome for Testing has no Linux ARM64
+# build, so on Apple Silicon use `docker build --platform linux/amd64`.
+#
 # We deliberately do NOT use Next's `output: standalone`: the app spawns
 # node_modules/.bin/agent-browser and node_modules/.bin/playwright at runtime,
 # which @vercel/nft cannot trace, so the standalone prune would break runs.
@@ -26,12 +29,18 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
+# Install browsers before copying source so app changes don't bust the cache.
+# agent-browser ships a Linux binary but downloads Chrome separately — the
+# postinstall does NOT do this, so it must be done explicitly or AI test runs
+# have no browser. --with-deps pulls any missing system libraries.
+RUN pnpm exec agent-browser install --with-deps
+
+# Playwright's own Chromium for *.spec.ts runs (playwright.config falls back to
+# it when no macOS agent-browser Chrome path exists).
+RUN pnpm exec playwright install chromium
+
 # App source.
 COPY . .
-
-# Ensure Playwright's own Chromium is present for *.spec.ts runs in-container
-# (playwright.config falls back to it when no macOS Chrome path exists).
-RUN pnpm exec playwright install chromium
 
 # Build the Next.js app.
 RUN pnpm build

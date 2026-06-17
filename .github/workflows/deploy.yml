@@ -51,7 +51,10 @@ jobs:
           REPO: ${{ env.APP }}-${{ env.ENVIRONMENT }}
         run: |
           IMAGE="$REGISTRY/$REPO"
-          docker build -t "$IMAGE:sha-${GITHUB_SHA::12}" -t "$IMAGE:latest" .
+          # Must be amd64: EKS nodes are x86 and agent-browser's Chrome for
+          # Testing has no Linux ARM64 build.
+          docker build --platform linux/amd64 \
+            -t "$IMAGE:sha-${GITHUB_SHA::12}" -t "$IMAGE:latest" .
           docker push "$IMAGE:sha-${GITHUB_SHA::12}"
           docker push "$IMAGE:latest"
           echo "IMAGE=$IMAGE:sha-${GITHUB_SHA::12}" >> "$GITHUB_ENV"
