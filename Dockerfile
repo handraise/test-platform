@@ -51,6 +51,6 @@ RUN mkdir -p /app/data
 
 EXPOSE 3000
 
-# `pnpm start` === `next start`. The agent-browser daemon is spawned on demand
-# per run by the app, so no separate process is needed here.
-CMD ["pnpm", "start"]
+# Apply the schema to the (persistent) DB on boot — idempotent — then start.
+# The agent-browser daemon is spawned on demand per run by the app.
+CMD ["sh", "-c", "pnpm db:push && pnpm start"]

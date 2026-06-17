@@ -1,0 +1,18 @@
+# Local run of the production image. amd64 (emulated on Apple Silicon) — the
+# browser path can be flaky locally; the deployed amd64 env is the real target.
+services:
+  ibud:
+    build:
+      context: .
+    image: ibud:local
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    volumes:
+      - ibud-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  ibud-data:
