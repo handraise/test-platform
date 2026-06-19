@@ -248,7 +248,7 @@ export function RunView({
               <p className="text-[12px] font-medium text-dim">
                 {showViewport && running ? "Live viewport" : "Screenshot"}
               </p>
-              {running && (
+              {running && viewportUrl && (
                 <button
                   onClick={() => setShowViewport((v) => !v)}
                   className="text-[12px] text-dim hover:text-ink transition-colors"

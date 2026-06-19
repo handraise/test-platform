@@ -38,14 +38,16 @@ export default function RootLayout({
               iBud
             </Link>
             <nav className="flex items-center gap-5">
-              <a
-                href={agentBrowserDashboardUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[13px] text-dim hover:text-ink transition-colors"
-              >
-                Browser viewport ↗
-              </a>
+              {agentBrowserDashboardUrl && (
+                <a
+                  href={agentBrowserDashboardUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[13px] text-dim hover:text-ink transition-colors"
+                >
+                  Browser viewport ↗
+                </a>
+              )}
             </nav>
           </div>
         </header>
