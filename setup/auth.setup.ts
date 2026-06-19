@@ -17,6 +17,6 @@ setup("authenticate", async ({ page }) => {
   }
 
   await login(page, { email, password });
-  await expect(page).toHaveURL(/discovery/);
+  await expect(page).toHaveURL(/\/chat\//);
   await page.context().storageState({ path: authFile });
 });

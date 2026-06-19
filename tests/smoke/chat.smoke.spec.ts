@@ -4,7 +4,7 @@ import { chatLocators } from "../../framework/ui/locators";
 
 // Authenticated via seeded storageState (smoke project).
 test("chat lists the available feeds", { tag: ["@smoke"] }, async ({ page }) => {
-  await page.goto("/discovery");
+  await page.goto("/chat/new");
   await openChat(page);
 
   await sendChatPrompt(page, "List all of available feeds");
