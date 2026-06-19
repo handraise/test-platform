@@ -164,6 +164,8 @@ HANDRAISE_EMAIL=you@example.com
 HANDRAISE_PASSWORD=...
 # optional: override the Playwright base URL
 # E2E_BASE_URL=https://naapp-stage2.handraise.site
+# optional: dashboard URL shown in the UI (default http://localhost:4848; empty hides it)
+# AGENT_BROWSER_DASHBOARD_URL=
 ```
 
 `.env*` is gitignored. Existing shell env vars always win over `.env.local`.
@@ -201,8 +203,39 @@ with screenshots; Playwright runs also surface trace + video).
 | `pnpm run-test tests/login.test.md` | Run a single test from the CLI, streaming progress to the terminal |
 | `pnpm build` / `pnpm start` | Production build / serve |
 | `pnpm lint` | ESLint |
+| `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm db:push` | Apply the Drizzle schema to `data/ibud.db` |
 | `pnpm exec playwright test` | Run the Playwright suite directly (setup → smoke) |
+
+---
+
+## Run in Docker
+
+The image bundles the app, agent-browser, and a browser. Build for **linux/amd64** —
+agent-browser's Chrome for Testing has no Linux ARM64 build, so on Apple Silicon
+Docker emulates x86 and browser runs can be slow/flaky (the deployed amd64 env is
+the real target).
+
+```bash
+# put real values in .env.local first (ANTHROPIC_API_KEY, HANDRAISE_EMAIL, HANDRAISE_PASSWORD)
+docker compose up -d --build
+open http://localhost:3000        # app
+open http://localhost:4848        # agent-browser dashboard
+```
+
+- App on `3000`, dashboard on `4848` (both published). State persists in the
+  `ibud-data` volume mounted at `/app/data` (SQLite, recorded scripts, artifacts).
+- The container applies the DB schema on boot and runs the dashboard behind a small
+  TCP forwarder (the dashboard binds loopback-only, so a forwarder exposes it).
+
+## Deployment
+
+Deployed to EKS from the infrastructure repo (`apps/test-suite/` Terraform): CI
+builds the amd64 image, pushes to ECR, and rolls it out. It runs as a **single
+replica with a persistent volume** — the in-memory SSE bus and on-disk SQLite +
+replay scripts can't be horizontally scaled — behind an internal, VPN-only ALB.
+Set `AGENT_BROWSER_DASHBOARD_URL=""` there to hide the live viewport (no public
+dashboard); per-step screenshots work in every environment.
 
 ---
 
