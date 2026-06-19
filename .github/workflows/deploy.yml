@@ -23,13 +23,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/newsamp-github-actions-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Assume EKS deploy role
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/eks-${{ env.ENVIRONMENT }}-github-actions-eks-role
           aws-region: ${{ env.AWS_REGION }}
@@ -37,7 +37,7 @@ jobs:
 
       - name: Log in to ECR
         id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@v2.1.4
 
       - name: Build and push image
         env:
