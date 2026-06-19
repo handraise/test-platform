@@ -17,5 +17,14 @@ services:
       - ibud-data:/app/data
     restart: unless-stopped
 
+  # Relays to ibud:4848 so OrbStack gives the dashboard its own HTTPS origin
+  # (https://viewport.<project>.orb.local). Plain Docker uses localhost:4848.
+  viewport:
+    image: alpine/socat
+    command: TCP-LISTEN:4848,fork,reuseaddr TCP:ibud:4848
+    depends_on:
+      - ibud
+    restart: unless-stopped
+
 volumes:
   ibud-data:
