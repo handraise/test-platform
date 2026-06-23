@@ -212,6 +212,24 @@ mise run docker:up
 That builds and runs the Compose service from `docker-compose.yml`. The app is
 served on `http://localhost:3000`.
 
+If your `.env` contains 1Password `op://...` references, use the OP-specific
+task so secrets are resolved before Docker Compose starts:
+
+```bash
+mise run docker:up:op
+```
+
+Without the `op` CLI, put real resolved values in `.env` and use the normal
+`mise run docker:up` task.
+
+If you use `lazydocker`, start Compose in the background and open the UI with:
+
+```bash
+mise run docker:ui
+# or, with op:// references in .env:
+mise run docker:ui:op
+```
+
 ---
 
 ## Commands
@@ -226,7 +244,9 @@ served on `http://localhost:3000`.
 | `mise run test:smoke` | Run the smoke Playwright project |
 | `mise run test:e2e` | Run the broader E2E Playwright project |
 | `mise run test:smoke:op` / `mise run test:e2e:op` | Run via 1Password-backed `.env` |
-| `mise run docker:up` / `mise run docker:down` | Start or stop the Docker Compose stack |
+| `mise run docker:up` / `mise run docker:down` | Start or stop Docker with real `.env` values |
+| `mise run docker:up:op` | Start Docker after resolving `op://...` values from `.env` |
+| `mise run docker:ui` / `mise run docker:ui:op` | Start Docker in the background and open lazydocker |
 | `pnpm run-test tests/login.test.md` | Run a single English test from the CLI |
 
 ---

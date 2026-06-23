@@ -31,10 +31,15 @@ const chromePath =
     ? macChromePath
     : undefined);
 
+function envValue(name: string): string | undefined {
+  const value = process.env[name]?.trim();
+  return value ? value : undefined;
+}
+
 const BASE_URL =
-  process.env.E2E_BASE_URL ?? process.env.NAAPP_BASE_URL ?? "https://naapp-stage2.handraise.site";
+  envValue("E2E_BASE_URL") ?? envValue("NAAPP_BASE_URL") ?? "https://naapp-stage2.handraise.site";
 const STORAGE_STATE =
-  process.env.E2E_AUTH_STATE_PATH ?? path.join(process.cwd(), ".auth", "user.json");
+  envValue("E2E_AUTH_STATE_PATH") ?? path.join(process.cwd(), ".auth", "user.json");
 
 export default defineConfig({
   // Each project sets its own testDir (setup/ vs tests/).

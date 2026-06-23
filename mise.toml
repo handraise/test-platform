@@ -95,9 +95,25 @@ run = "pnpm dev"
 description = "Build and run test-platform with Docker Compose."
 run = "docker compose up --build"
 
+[tasks."docker:up:op"]
+description = "Build and run Docker Compose through 1Password-backed .env."
+run = "op run --env-file=.env -- docker compose up --build"
+
 [tasks."docker:up:detached"]
 description = "Build and run test-platform with Docker Compose in the background."
 run = "docker compose up --build -d"
+
+[tasks."docker:up:detached:op"]
+description = "Build and run Docker Compose in the background through 1Password-backed .env."
+run = "op run --env-file=.env -- docker compose up --build -d"
+
+[tasks."docker:ui"]
+description = "Build and run Docker Compose in the background, then open lazydocker."
+run = "docker compose up --build -d && lazydocker"
+
+[tasks."docker:ui:op"]
+description = "Build and run Docker Compose through 1Password-backed .env, then open lazydocker."
+run = "op run --env-file=.env -- docker compose up --build -d && lazydocker"
 
 [tasks."docker:down"]
 description = "Stop the Docker Compose test-platform stack."
@@ -110,3 +126,7 @@ run = "docker compose logs -f ibud"
 [tasks."docker:rebuild"]
 description = "Rebuild the local test-platform Docker image from scratch."
 run = "docker compose build --no-cache"
+
+[tasks."docker:rebuild:op"]
+description = "Rebuild the local Docker image through 1Password-backed .env."
+run = "op run --env-file=.env -- docker compose build --no-cache"

@@ -3,6 +3,13 @@ import path from "node:path";
 
 let loaded = false;
 
+const ENV_ALIASES: Record<string, string> = {
+  HANDRAISE_EMAIL: "E2E_USER_EMAIL",
+  HANDRAISE_PASSWORD: "E2E_USER_PASSWORD",
+  E2E_USER_EMAIL: "HANDRAISE_EMAIL",
+  E2E_USER_PASSWORD: "HANDRAISE_PASSWORD",
+};
+
 /**
  * Load .env.local into process.env (once). Next.js already does this for the
  * web app; this covers the CLI path and any standalone script. Existing env
@@ -25,7 +32,7 @@ export function loadEnvLocal(): void {
 export function resolveVars(input: string): string {
   loadEnvLocal();
   return input.replace(/\$\{([A-Z_][A-Z0-9_]*)\}/g, (whole, key) => {
-    const v = process.env[key];
+    const v = process.env[key] || process.env[ENV_ALIASES[key]];
     return v === undefined ? whole : v;
   });
 }

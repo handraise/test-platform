@@ -9,6 +9,7 @@ import { TraceEntry, checkExpect } from "./trace";
 import { resolveVars } from "./env";
 
 const MODEL = "claude-opus-4-8";
+const AI_WAIT_TIMEOUT_MS = 120_000;
 
 const SYSTEM_PROMPT = `You are iBud, an expert end-to-end test executor. You receive a test written in plain English and you execute it against a real browser using the provided tools, then verify every expectation.
 
@@ -198,7 +199,7 @@ export async function runAiExecutor(opts: {
         else if (urlPattern) argv.push("--url", urlPattern);
         else if (loadState) argv.push("--load", loadState);
         else return "ERROR: provide one of selector/text/urlPattern/loadState";
-        const r = await browser.run(argv, 45_000);
+        const r = await browser.run(argv, AI_WAIT_TIMEOUT_MS);
         if (r.ok) entries.push({ stepIndex: step, argv });
         return resultText(r);
       },
@@ -227,26 +228,26 @@ export async function runAiExecutor(opts: {
             "--fn",
             `location.href.includes(${JSON.stringify(value)})`,
           ];
-          const r = await browser.run(argv, 30_000);
+          const r = await browser.run(argv, AI_WAIT_TIMEOUT_MS);
           if (r.ok) entries.push({ stepIndex: step, argv });
           return r.ok ? `PASS: URL contains "${value}"` : `FAIL: ${r.output}`;
         }
         if (kind === "text_visible") {
           const argv = ["wait", "--text", value];
-          const r = await browser.run(argv, 30_000);
+          const r = await browser.run(argv, AI_WAIT_TIMEOUT_MS);
           if (r.ok) entries.push({ stepIndex: step, argv });
           return r.ok ? `PASS: text "${value}" visible` : `FAIL: ${r.output}`;
         }
         if (kind === "element_visible") {
           const argv = ["wait", value];
-          const r = await browser.run(argv, 30_000);
+          const r = await browser.run(argv, AI_WAIT_TIMEOUT_MS);
           if (r.ok) entries.push({ stepIndex: step, argv });
           return r.ok ? `PASS: ${value} visible` : `FAIL: ${r.output}`;
         }
         // element_text_equals
         if (!selector) return "ERROR: selector required for element_text_equals";
         const waitArgv = ["wait", selector];
-        const w = await browser.run(waitArgv, 30_000);
+        const w = await browser.run(waitArgv, AI_WAIT_TIMEOUT_MS);
         if (!w.ok) return `FAIL: element ${selector} not visible: ${w.output}`;
         const argv = ["get", "text", selector];
         const r = await browser.run(argv);

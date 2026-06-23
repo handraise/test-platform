@@ -8,8 +8,17 @@ services:
     platform: linux/amd64
     ports:
       - "3000:3000"
-    env_file:
-      - .env.local
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      E2E_BASE_URL: ${E2E_BASE_URL:-}
+      NAAPP_BASE_URL: ${NAAPP_BASE_URL:-}
+      NAAPP_AUTH_URL: ${NAAPP_AUTH_URL:-/api/auth/login}
+      E2E_USER_EMAIL: ${E2E_USER_EMAIL:-}
+      E2E_USER_PASSWORD: ${E2E_USER_PASSWORD:-}
+      HANDRAISE_EMAIL: ${HANDRAISE_EMAIL:-}
+      HANDRAISE_PASSWORD: ${HANDRAISE_PASSWORD:-}
+      E2E_AUTH_STATE_PATH: ${E2E_AUTH_STATE_PATH:-}
+      PLAYWRIGHT_CHROME_PATH: ${PLAYWRIGHT_CHROME_PATH:-}
     volumes:
       - ibud-data:/app/data
     restart: unless-stopped
