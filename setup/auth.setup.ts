@@ -1,22 +1,46 @@
-import { test as setup, expect } from "@playwright/test";
+import { expect, test as setup } from "@playwright/test";
 import path from "node:path";
-import { login } from "../framework/ui/actions";
 
-const authFile = path.join(process.cwd(), ".auth", "user.json");
+const authFile = process.env.E2E_AUTH_STATE_PATH ?? path.join(process.cwd(), ".auth", "user.json");
+const AUTH_STORAGE_KEY = "auth-storage";
+
+type LoginResponse = { access?: string; refresh?: string };
 
 /**
- * Programmatic auth: log in once, persist storageState, and let every smoke
- * test reuse it. (REST login → storageState is the eventual target per the
- * proposal; this UI-seeded variant needs no naapi contract to start.)
+ * Programmatic auth: log in once over REST, seed naapp's persisted auth state,
+ * and let smoke/e2e specs reuse storageState instead of repeating UI login.
  */
-setup("authenticate", async ({ page }) => {
-  const email = process.env.HANDRAISE_EMAIL;
-  const password = process.env.HANDRAISE_PASSWORD;
+setup("authenticate", async ({ request, page }) => {
+  const email = process.env.E2E_USER_EMAIL ?? process.env.HANDRAISE_EMAIL;
+  const password = process.env.E2E_USER_PASSWORD ?? process.env.HANDRAISE_PASSWORD;
+  const authUrl = process.env.NAAPP_AUTH_URL ?? "/api/auth/login";
+
   if (!email || !password) {
-    throw new Error("HANDRAISE_EMAIL / HANDRAISE_PASSWORD must be set (see .env.local)");
+    throw new Error(
+      "E2E_USER_EMAIL/E2E_USER_PASSWORD or HANDRAISE_EMAIL/HANDRAISE_PASSWORD must be set.",
+    );
   }
 
-  await login(page, { email, password });
-  await expect(page).toHaveURL(/discovery/);
+  const response = await request.post(authUrl, { data: { email, password } });
+  expect(
+    response.ok(),
+    `REST login failed: ${response.status()} ${response.statusText()}`,
+  ).toBeTruthy();
+
+  const { access, refresh } = (await response.json()) as LoginResponse;
+  expect(access, "login response did not include an access token").toBeTruthy();
+
+  await page.goto("/");
+  await page.evaluate(
+    ({ key, value }) => window.localStorage.setItem(key, value),
+    {
+      key: AUTH_STORAGE_KEY,
+      value: JSON.stringify({
+        state: { loggedIn: true, accessToken: access, refreshToken: refresh ?? null },
+        version: 0,
+      }),
+    },
+  );
+
   await page.context().storageState({ path: authFile });
 });

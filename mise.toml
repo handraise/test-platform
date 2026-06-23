@@ -1,0 +1,112 @@
+min_version = "2026.3.17"
+
+[tools]
+pnpm = "10.33.0"
+node = "20"
+
+[env]
+_.path = ["node_modules/.bin"]
+
+[vars]
+setup_version = "1"
+
+[tasks.setup]
+description = "Install mise tools and project dependencies."
+depends_post = ["deps", "setup:stamp"]
+run = "mise install"
+
+[tasks.deps]
+description = "Install pnpm dependencies when package inputs change."
+sources = ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"]
+outputs = ["node_modules"]
+run = "pnpm install --frozen-lockfile"
+
+[tasks."setup:stamp"]
+description = "Record the completed local setup version."
+hide = true
+wait_for = ["deps"]
+run = "mkdir -p .mise && printf '%s\n' '{{vars.setup_version}}' > .mise/setup"
+
+[tasks.check]
+description = "Run static validation: lint and typecheck."
+run = "pnpm lint && pnpm typecheck"
+
+[tasks.lint]
+description = "Alias for check."
+run = "mise run check"
+
+[tasks.test]
+description = "Run the full Playwright suite."
+run = "pnpm test"
+
+[tasks."test:list"]
+description = "List Playwright tests without executing them."
+run = "pnpm exec playwright test --list"
+
+[tasks."test:smoke"]
+description = "Run the smoke Playwright project."
+run = "pnpm test:smoke"
+
+[tasks."test:e2e"]
+description = "Run the broader E2E Playwright project."
+run = "pnpm test:e2e"
+
+[tasks."test:ui"]
+description = "Open the Playwright UI."
+run = "pnpm test:ui"
+
+[tasks."test:headed"]
+description = "Run Playwright headed."
+run = "pnpm test:headed"
+
+[tasks.auth]
+description = "Seed Playwright auth storageState."
+run = "pnpm auth:setup"
+
+[tasks."auth:op"]
+description = "Seed Playwright auth storageState through 1Password-backed .env."
+run = "op run --env-file=.env -- pnpm auth:setup"
+
+[tasks."test:smoke:op"]
+description = "Run smoke tests through 1Password-backed .env."
+run = "op run --env-file=.env -- pnpm test:smoke"
+
+[tasks."test:e2e:op"]
+description = "Run E2E tests through 1Password-backed .env."
+run = "op run --env-file=.env -- pnpm test:e2e"
+
+[tasks.pw]
+description = "Raw Playwright passthrough. Append args after --."
+run = "pnpm exec playwright test"
+
+[tasks."pw:op"]
+description = "Raw Playwright passthrough through 1Password-backed .env."
+run = "op run --env-file=.env -- pnpm exec playwright test"
+
+[tasks.build]
+description = "Build the Next.js app."
+run = "pnpm build"
+
+[tasks.dev]
+description = "Run the local Next.js dashboard and agent-browser dashboard."
+run = "pnpm dev"
+
+[tasks."docker:up"]
+description = "Build and run test-platform with Docker Compose."
+run = "docker compose up --build"
+
+[tasks."docker:up:detached"]
+description = "Build and run test-platform with Docker Compose in the background."
+run = "docker compose up --build -d"
+
+[tasks."docker:down"]
+description = "Stop the Docker Compose test-platform stack."
+run = "docker compose down"
+
+[tasks."docker:logs"]
+description = "Follow Docker Compose logs for the ibud service."
+run = "docker compose logs -f ibud"
+
+[tasks."docker:rebuild"]
+description = "Rebuild the local test-platform Docker image from scratch."
+run = "docker compose build --no-cache"
