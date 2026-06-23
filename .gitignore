@@ -54,5 +54,6 @@ playwright/.cache/
 
 # local agent hook state
 continual-learning.json
+continual-learning-*
 AGENTS.local.md
 AGENTS.LOCAL.md
