@@ -1,0 +1,52 @@
+---
+description: UI test layering, tags, selector priority, and naming for naapp E2E specs
+globs:
+  - framework/ui/**/*.ts
+  - tests/**/*.spec.ts
+alwaysApply: false
+---
+
+# UI test standards
+
+## Layer model
+
+`selector subset locator -> action -> spec`. Nothing skips a layer.
+
+- **Selector**: raw DOM query (`getByRole`, `getByLabel`, `getByTestId`, text, CSS/XPath last resort).
+- **Locator**: stateless `(page) => Locator`. No clicks, waits, or assertions. Use `.or()` for resilient variants.
+- **Action**: plain async function that performs user behavior. Consumes locators only; never calls `page.getByRole` directly.
+- **Spec**: thin Playwright test composing actions and asserting outcomes.
+
+## Rules
+
+1. Locators are stateless: `(page) => Locator`.
+2. Actions never touch raw selectors.
+3. Specs are thin: compose actions, assert on locators or URLs.
+4. Selector priority: `getByRole` -> `getByLabel` -> `getByTestId` -> text/placeholder -> CSS/XPath.
+5. No `should` in test names; name by observed behavior.
+6. Every test is tagged with Playwright structured tags: `{ tag: ["@smoke"] }`.
+7. Auth is programmatic via `storageState`; do not repeat UI login in every test.
+8. Determinism beats realism in PR gates; stub noisy GraphQL on PR, reserve live paths for nightly.
+
+## Examples
+
+```typescript
+// locator
+export const navLocators = {
+  chatLink: (page: Page) =>
+    page.getByRole("link", { name: /chat/i }).or(page.getByTestId("nav-chat")).first(),
+};
+
+// action
+export async function openChat(page: Page): Promise<void> {
+  await navLocators.chatLink(page).click();
+  await page.waitForURL(/\/chat$/);
+}
+
+// spec
+test("authenticated user opens chat to its initial state", { tag: ["@smoke"] }, async ({ page }) => {
+  await page.goto("/discovery");
+  await openChat(page);
+  await expect(chatLocators.composer(page)).toBeVisible();
+});
+```

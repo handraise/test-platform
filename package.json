@@ -10,7 +10,16 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "db:push": "drizzle-kit push",
-    "run-test": "tsx src/lib/cli.ts"
+    "run-test": "tsx src/lib/cli.ts",
+    "test": "playwright test",
+    "test:smoke": "playwright test --project=smoke",
+    "test:e2e": "playwright test --project=e2e",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "auth:setup": "playwright test --project=setup",
+    "auth:setup:op": "op run --env-file=.env -- playwright test --project=setup",
+    "test:smoke:op": "op run --env-file=.env -- playwright test --project=smoke",
+    "test:e2e:op": "op run --env-file=.env -- playwright test --project=e2e"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

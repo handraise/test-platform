@@ -46,6 +46,14 @@ data/
 # iBud / playwright artifacts
 test-results/
 playwright-report/
+blob-report/
+playwright/.cache/
 
 # playwright auth state
 .auth/
+
+# local agent hook state
+continual-learning.json
+continual-learning-*
+AGENTS.local.md
+AGENTS.LOCAL.md

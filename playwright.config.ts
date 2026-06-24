@@ -31,8 +31,15 @@ const chromePath =
     ? macChromePath
     : undefined);
 
-const BASE_URL = process.env.E2E_BASE_URL ?? "https://naapp-stage2.handraise.site";
-const STORAGE_STATE = path.join(process.cwd(), ".auth", "user.json");
+function envValue(name: string): string | undefined {
+  const value = process.env[name]?.trim();
+  return value ? value : undefined;
+}
+
+const BASE_URL =
+  envValue("E2E_BASE_URL") ?? envValue("NAAPP_BASE_URL") ?? "https://naapp-stage2.handraise.site";
+const STORAGE_STATE =
+  envValue("E2E_AUTH_STATE_PATH") ?? path.join(process.cwd(), ".auth", "user.json");
 
 export default defineConfig({
   // Each project sets its own testDir (setup/ vs tests/).
@@ -62,7 +69,14 @@ export default defineConfig({
     {
       name: "smoke",
       testDir: "./tests",
-      testMatch: "**/*.spec.ts",
+      testMatch: /smoke\/.*\.smoke\.spec\.ts/,
+      dependencies: ["setup"],
+      use: { storageState: STORAGE_STATE },
+    },
+    {
+      name: "e2e",
+      testDir: "./tests",
+      testMatch: /e2e\/.*\.e2e\.spec\.ts/,
       dependencies: ["setup"],
       use: { storageState: STORAGE_STATE },
     },

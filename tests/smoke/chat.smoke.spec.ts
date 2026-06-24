@@ -3,6 +3,14 @@ import { openChat, sendChatPrompt } from "../../framework/ui/actions";
 import { chatLocators } from "../../framework/ui/locators";
 
 // Authenticated via seeded storageState (smoke project).
+test("authenticated user opens chat to its initial state", { tag: ["@smoke"] }, async ({ page }) => {
+  await page.goto("/discovery");
+  await openChat(page);
+
+  await expect(chatLocators.composer(page)).toBeVisible();
+  await expect(chatLocators.composer(page)).toBeEnabled();
+});
+
 test("chat lists the available feeds", { tag: ["@smoke"] }, async ({ page }) => {
   await page.goto("/chat/new");
   await openChat(page);

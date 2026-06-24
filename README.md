@@ -146,15 +146,20 @@ docs/how-it-works.html      slide deck
 
 ### Prerequisites
 
-- Node.js 20+ and **pnpm**
+- [mise](https://mise.jdx.dev/) for pinned Node.js/pnpm and task discovery
 - An Anthropic API key
 - Credentials for the app under test
+- Docker Engine or Docker Desktop if you want the containerized local run
 
 ### 1. Install
 
 ```bash
-pnpm install
+mise trust
+mise run setup
 ```
+
+This installs the pinned toolchain from `mise.toml` and runs `pnpm install --frozen-lockfile`.
+If you are not using mise yet, install Node.js 20+ and pnpm 10.33.0, then run `pnpm install`.
 
 ### 2. Configure secrets — `.env.local`
 
@@ -164,11 +169,18 @@ HANDRAISE_EMAIL=you@example.com
 HANDRAISE_PASSWORD=...
 # optional: override the Playwright base URL
 # E2E_BASE_URL=https://naapp-stage2.handraise.site
+# e2e-handraise compatibility names are also supported:
+# NAAPP_BASE_URL=https://naapp-stage2.handraise.site
+# E2E_USER_EMAIL=you@example.com
+# E2E_USER_PASSWORD=...
+# NAAPP_AUTH_URL=/api/auth/login
 # optional: dashboard URL shown in the UI (default http://localhost:4848; empty hides it)
 # AGENT_BROWSER_DASHBOARD_URL=
 ```
 
 `.env*` is gitignored. Existing shell env vars always win over `.env.local`.
+For 1Password-backed local runs, `.env` can contain `op://...` references and
+the `*:op` package scripts or `mise` tasks run them through `op run --env-file=.env`.
 
 ### 3. Adjust `ibud.config.json` if needed
 
@@ -185,7 +197,7 @@ HANDRAISE_PASSWORD=...
 ### 4. Run the dashboard
 
 ```bash
-pnpm dev
+mise run dev
 ```
 
 This picks the first free port from `3000` up, starts the **agent-browser
@@ -193,19 +205,51 @@ observability dashboard** (default `http://localhost:4848`), then `next dev`.
 Open the printed URL, pick a test, and watch it run live (steps stream over SSE
 with screenshots; Playwright runs also surface trace + video).
 
+For the production-like Docker path:
+
+```bash
+mise run docker:up
+```
+
+That builds and runs the Compose service from `docker-compose.yml`. The app is
+served on `http://localhost:3000`.
+
+If your `.env` contains 1Password `op://...` references, use the OP-specific
+task so secrets are resolved before Docker Compose starts:
+
+```bash
+mise run docker:up:op
+```
+
+Without the `op` CLI, put real resolved values in `.env` and use the normal
+`mise run docker:up` task.
+
+If you use `lazydocker`, start Compose in the background and open the UI with:
+
+```bash
+mise run docker:ui
+# or, with op:// references in .env:
+mise run docker:ui:op
+```
+
 ---
 
 ## Commands
 
 | Command | What it does |
 |---------|--------------|
-| `pnpm dev` | Start the dashboard + agent-browser dashboard |
-| `pnpm run-test tests/login.test.md` | Run a single test from the CLI, streaming progress to the terminal |
-| `pnpm build` / `pnpm start` | Production build / serve |
-| `pnpm lint` | ESLint |
-| `pnpm typecheck` | `tsc --noEmit` |
-| `pnpm db:push` | Apply the Drizzle schema to `data/ibud.db` |
-| `pnpm exec playwright test` | Run the Playwright suite directly (setup → smoke) |
+| `mise tasks` | Discover all local tasks from `mise.toml` |
+| `mise run setup` | Install pinned tools and project dependencies |
+| `mise run dev` | Start the dashboard + agent-browser dashboard |
+| `mise run check` | Run lint and typecheck |
+| `mise run test:list` | List Playwright specs without executing them |
+| `mise run test:smoke` | Run the smoke Playwright project |
+| `mise run test:e2e` | Run the broader E2E Playwright project |
+| `mise run test:smoke:op` / `mise run test:e2e:op` | Run via 1Password-backed `.env` |
+| `mise run docker:up` / `mise run docker:down` | Start or stop Docker with real `.env` values |
+| `mise run docker:up:op` | Start Docker after resolving `op://...` values from `.env` |
+| `mise run docker:ui` / `mise run docker:ui:op` | Start Docker in the background and open lazydocker |
+| `pnpm run-test tests/login.test.md` | Run a single English test from the CLI |
 
 ---
 
@@ -217,7 +261,7 @@ Docker emulates x86 and browser runs can be slow/flaky (the deployed amd64 env i
 the real target).
 
 ```bash
-# put real values in .env.local first (ANTHROPIC_API_KEY, HANDRAISE_EMAIL, HANDRAISE_PASSWORD)
+# put real values in .env first (ANTHROPIC_API_KEY, HANDRAISE_EMAIL, HANDRAISE_PASSWORD)
 docker compose up -d --build
 open http://localhost:3000        # app
 open http://localhost:4848        # agent-browser dashboard

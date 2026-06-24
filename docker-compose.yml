@@ -9,10 +9,18 @@ services:
     ports:
       - "3000:3000"
       - "4848:4848"
-    env_file:
-      # Defaults to ibud.config.json (http://localhost:4848). Set
-      # AGENT_BROWSER_DASHBOARD_URL here for a different origin (e.g. OrbStack).
-      - .env.local
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      E2E_BASE_URL: ${E2E_BASE_URL:-}
+      NAAPP_BASE_URL: ${NAAPP_BASE_URL:-}
+      NAAPP_AUTH_URL: ${NAAPP_AUTH_URL:-/api/auth/login}
+      E2E_USER_EMAIL: ${E2E_USER_EMAIL:-}
+      E2E_USER_PASSWORD: ${E2E_USER_PASSWORD:-}
+      HANDRAISE_EMAIL: ${HANDRAISE_EMAIL:-}
+      HANDRAISE_PASSWORD: ${HANDRAISE_PASSWORD:-}
+      E2E_AUTH_STATE_PATH: ${E2E_AUTH_STATE_PATH:-}
+      PLAYWRIGHT_CHROME_PATH: ${PLAYWRIGHT_CHROME_PATH:-}
+      AGENT_BROWSER_DASHBOARD_URL: ${AGENT_BROWSER_DASHBOARD_URL:-}
     volumes:
       - ibud-data:/app/data
     restart: unless-stopped

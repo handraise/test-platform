@@ -1,0 +1,36 @@
+---
+description: naapp stack conventions for test data, GraphQL, auth, flags, and catalog
+globs:
+  - framework/data/**
+  - framework/fixtures/**
+  - framework/api/**
+alwaysApply: false
+---
+
+# naapp stack conventions
+
+## Test data
+
+- Use known tenant snapshots in `framework/data/tenantSnapshot.ts` with a pinned snapshot version.
+- GraphQL stub payloads live in `framework/data/graphqlFixtures.ts` and should be checked with TypeScript types when schema codegen is wired.
+
+## GraphQL
+
+- Typed operations go in `framework/api/operations/`.
+- Stub via `framework/mocks/graphqlMock.ts` (`page.route` wrapper), not MSW.
+- Refresh types with the `regen-graphql-types` command against the stage2 schema.
+
+## Auth
+
+- REST login in `setup/auth.setup.ts` seeds `.auth/user.json` (`storageState`).
+- UI login is tested directly only in dedicated smoke coverage, not repeated per spec.
+
+## Feature flags
+
+- Pin critical GrowthBook flags in fixtures for deterministic smoke runs.
+
+## Component catalog
+
+- Pull `component-catalog.json` from naapp CI-published artifacts by version/tag.
+- Cache during the test run; fall back to a committed copy for offline runs.
+- E2E validates deterministic render-spec consumption; LLM quality evals stay in backend deepeval/MLflow.
