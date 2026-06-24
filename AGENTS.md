@@ -27,3 +27,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Scope task-only environment variables to the task instead of global `[env]`.
 - Use `[vars]` for reusable task config that should not be exported as environment.
 - Gate destructive Docker or data-reset tasks with `confirm`.
+
+# Project notes
+
+- Docker image must be **linux/amd64** — agent-browser's Chrome has no ARM64 build. Local: `docker compose up` (browser is emulated/flaky on Apple Silicon).
+- Single replica only: in-memory SSE bus + on-disk SQLite/replay scripts. Schema is applied on boot via `pnpm db:push`.
+- Tests run against the Handraise stage app; post-login lands on `/chat/new`.
+- Deploy infra lives in the Terraform repo (`apps/test-suite/`).

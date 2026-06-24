@@ -8,6 +8,7 @@ services:
     platform: linux/amd64
     ports:
       - "3000:3000"
+      - "4848:4848"
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       E2E_BASE_URL: ${E2E_BASE_URL:-}
@@ -19,8 +20,18 @@ services:
       HANDRAISE_PASSWORD: ${HANDRAISE_PASSWORD:-}
       E2E_AUTH_STATE_PATH: ${E2E_AUTH_STATE_PATH:-}
       PLAYWRIGHT_CHROME_PATH: ${PLAYWRIGHT_CHROME_PATH:-}
+      AGENT_BROWSER_DASHBOARD_URL: ${AGENT_BROWSER_DASHBOARD_URL:-}
     volumes:
       - ibud-data:/app/data
+    restart: unless-stopped
+
+  # Relays to ibud:4848 so OrbStack gives the dashboard its own HTTPS origin
+  # (https://viewport.<project>.orb.local). Plain Docker uses localhost:4848.
+  viewport:
+    image: alpine/socat
+    command: TCP-LISTEN:4848,fork,reuseaddr TCP:ibud:4848
+    depends_on:
+      - ibud
     restart: unless-stopped
 
 volumes:

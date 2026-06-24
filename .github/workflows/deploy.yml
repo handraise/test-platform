@@ -1,21 +1,8 @@
-# Build the iBud image, push to ECR, and roll it out on EKS.
-#
-# Prerequisites created by Terraform (apps/test-suite in the terraform repo):
-#   - ECR repo:        test-suite-${ENVIRONMENT}
-#   - K8s namespace:   test-suite
-#   - K8s deployment:  test-suite  (image is managed by this workflow; Terraform
-#                                   ignores changes to the container image)
-#
-# Required repo configuration (Settings → Secrets and variables → Actions):
-#   - secret  AWS_DEPLOY_ROLE_ARN  — IAM role this workflow assumes via OIDC
-#                                     (ECR push + eks:DescribeCluster + kubectl)
-#
-# Confirm the account id, region, cluster, and ENVIRONMENT below match the
-# target chosen in Terraform before enabling.
+# Build the iBud image, push to ECR, roll out on EKS.
+# Auth: OIDC → newsamp-github-actions-role → eks-${ENVIRONMENT}-github-actions-eks-role.
 name: Deploy iBud
 
-# Manual-only for now. Switch to `push: { branches: [main] }` once the Terraform
-# infra (ECR repo, namespace, deployment) and AWS_DEPLOY_ROLE_ARN secret exist.
+# Manual until infra exists + test-platform is in the role's OIDC trust.
 on:
   workflow_dispatch:
 
@@ -35,15 +22,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/newsamp-github-actions-role
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Assume EKS deploy role
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/eks-${{ env.ENVIRONMENT }}-github-actions-eks-role
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
 
       - name: Log in to ECR
         id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@v2.1.4
 
       - name: Build and push image
         env:

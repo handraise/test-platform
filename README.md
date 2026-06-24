@@ -174,6 +174,8 @@ HANDRAISE_PASSWORD=...
 # E2E_USER_EMAIL=you@example.com
 # E2E_USER_PASSWORD=...
 # NAAPP_AUTH_URL=/api/auth/login
+# optional: dashboard URL shown in the UI (default http://localhost:4848; empty hides it)
+# AGENT_BROWSER_DASHBOARD_URL=
 ```
 
 `.env*` is gitignored. Existing shell env vars always win over `.env.local`.
@@ -248,6 +250,36 @@ mise run docker:ui:op
 | `mise run docker:up:op` | Start Docker after resolving `op://...` values from `.env` |
 | `mise run docker:ui` / `mise run docker:ui:op` | Start Docker in the background and open lazydocker |
 | `pnpm run-test tests/login.test.md` | Run a single English test from the CLI |
+
+---
+
+## Run in Docker
+
+The image bundles the app, agent-browser, and a browser. Build for **linux/amd64** —
+agent-browser's Chrome for Testing has no Linux ARM64 build, so on Apple Silicon
+Docker emulates x86 and browser runs can be slow/flaky (the deployed amd64 env is
+the real target).
+
+```bash
+# put real values in .env first (ANTHROPIC_API_KEY, HANDRAISE_EMAIL, HANDRAISE_PASSWORD)
+docker compose up -d --build
+open http://localhost:3000        # app
+open http://localhost:4848        # agent-browser dashboard
+```
+
+- App on `3000`, dashboard on `4848` (both published). State persists in the
+  `ibud-data` volume mounted at `/app/data` (SQLite, recorded scripts, artifacts).
+- The container applies the DB schema on boot and runs the dashboard behind a small
+  TCP forwarder (the dashboard binds loopback-only, so a forwarder exposes it).
+
+## Deployment
+
+Deployed to EKS from the infrastructure repo (`apps/test-suite/` Terraform): CI
+builds the amd64 image, pushes to ECR, and rolls it out. It runs as a **single
+replica with a persistent volume** — the in-memory SSE bus and on-disk SQLite +
+replay scripts can't be horizontally scaled — behind an internal, VPN-only ALB.
+Set `AGENT_BROWSER_DASHBOARD_URL=""` there to hide the live viewport (no public
+dashboard); per-step screenshots work in every environment.
 
 ---
 

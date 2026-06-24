@@ -12,5 +12,8 @@ export async function login(page: Page, credentials: Credentials): Promise<void>
   await authLocators.email(page).fill(credentials.email);
   await authLocators.password(page).fill(credentials.password);
   await authLocators.signIn(page).click();
-  await page.waitForURL(/discovery/, { timeout: 30_000 });
+  // Post-login currently lands on /chat/new; just wait until login is complete.
+  await page.waitForURL((url) => !url.pathname.startsWith("/auth/login"), {
+    timeout: 30_000,
+  });
 }
