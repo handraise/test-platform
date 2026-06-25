@@ -12,6 +12,21 @@ import { loadConfig } from "./config";
 
 export type RunMode = "replay" | "ai" | "healed" | "playwright";
 
+/** Runs execute in-process, so at server start nothing can still be running —
+ *  any leftover "running" rows are from a crash/rollout mid-run. Mark them errored. */
+export function reconcileOrphanedRuns(): void {
+  const res = db
+    .update(schema.runs)
+    .set({ status: "error", error: "Interrupted (server restarted)", finishedAt: new Date() })
+    .where(eq(schema.runs.status, "running"))
+    .run();
+  db.update(schema.runSteps)
+    .set({ status: "failed", note: "interrupted" })
+    .where(eq(schema.runSteps.status, "running"))
+    .run();
+  if (res.changes > 0) console.log(`reconciled ${res.changes} orphaned run(s)`);
+}
+
 /** Create the run + step rows and kick off execution in the background. */
 export function startRun(test: TestFile): string {
   const runId = nanoid(10);
